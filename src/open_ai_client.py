@@ -18,3 +18,20 @@ def ask(prompt):
     )
 
     return response.output_text
+
+def ask_structured(
+    prompt: str,
+    schema,
+):
+    """
+    Ask OpenAI to return a structured object
+    matching the supplied Pydantic schema.
+    """
+
+    response = client.responses.parse(
+        model=OPENAI_MODEL,
+        input=prompt,
+        text_format=schema,
+    )
+
+    return response.output_parsed

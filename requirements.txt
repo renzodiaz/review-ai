@@ -11,3 +11,4 @@ faiss-cpu
 sentence-transformers
 
 GitPython
+pydantic>=2.0

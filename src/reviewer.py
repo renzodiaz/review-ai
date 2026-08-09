@@ -1,5 +1,6 @@
-from src.open_ai_client import ask
+from src.open_ai_client import ask_structured
 from src.rag import retrieve
+from src.schema import ReviewResult
 
 
 def create_prompt(
@@ -8,7 +9,7 @@ def create_prompt(
     rubocop_context: str,
 ) -> str:
     """
-    Build the final AI review prompt.
+    Build the structured review prompt.
     """
 
     knowledge = "\n\n".join(
@@ -21,109 +22,77 @@ def create_prompt(
 
     return f"""
 You are a Senior Ruby on Rails Engineer
-performing a Pull Request code review.
+performing a Pull Request review.
 
-You have three sources of information:
+Analyze the changed Ruby code using:
 
-1. Changed Ruby code
+1. The code itself
 2. Retrieved engineering guidelines
-3. Static analysis results from RuboCop
+3. RuboCop static analysis
 
-Use all three as evidence.
+Your goal is to identify meaningful engineering
+problems.
 
-Do not blindly trust static analysis.
-Determine whether each finding is actually
-important to the Pull Request.
-
-Focus on meaningful engineering problems.
-
-Analyze:
+Focus on:
 
 - Security
 - Performance
 - Rails best practices
 - Maintainability
-- Code smells
+- Team Convention
 - Testing
+- Style when it has meaningful impact
 
-IMPORTANT:
+IMPORTANT RULES:
 
-- Only report issues supported by evidence.
-- Do not invent vulnerabilities.
-- Do not report harmless stylistic differences
-  as serious problems.
-- Explain why each issue matters.
-- Provide concrete recommendations.
-- Reference the source of the finding.
+- Do not invent issues.
+- Do not report generic advice.
+- Only report problems supported by evidence.
+- Do not blindly trust RuboCop.
+- Distinguish real engineering problems from
+  harmless style preferences.
+- Prefer fewer high-confidence issues over many
+  speculative issues.
+- The score should reflect the severity and number
+  of meaningful issues.
 
-========================
 RETRIEVED KNOWLEDGE
-========================
+===================
 
 {knowledge}
 
 
-========================
 CHANGED RUBY CODE
-========================
+=================
 
 {changed_code}
 
 
-========================
 RUBOCOP RESULTS
-========================
+===============
 
 {rubocop_context}
 
 
-========================
-OUTPUT
-========================
+SCORING GUIDELINES
+==================
 
-# Overall Review
+90-100:
+Excellent change with no meaningful issues.
 
-## Summary
+80-89:
+Good change with minor concerns.
 
-Briefly describe what the Pull Request changes.
+70-79:
+Acceptable but contains meaningful issues.
 
-## Issues
+50-69:
+Significant engineering problems.
 
-For each issue:
+0-49:
+Critical problems or unsafe implementation.
 
-### [Severity] Issue title
-
-Category:
-Security / Performance / Rails /
-Maintainability / Testing / Style
-
-File:
-...
-
-Line:
-...
-
-Explanation:
-...
-
-Recommendation:
-...
-
-Evidence:
-RAG / RuboCop / Code Analysis
-
-Reference:
-...
-
-## Positive Findings
-
-Mention good engineering decisions.
-
-## Final Assessment
-
-Overall score: X/100
-
-Explain the score.
+Return only the structured review.
 """
 
 
@@ -131,9 +100,9 @@ def review(
     changed_code: str,
     db,
     rubocop_context: str = "No RuboCop results.",
-) -> str:
+) -> ReviewResult:
     """
-    Run RAG + RuboCop + OpenAI review.
+    Run RAG + RuboCop + OpenAI.
     """
 
     relevant_documents = retrieve(
@@ -147,4 +116,7 @@ def review(
         rubocop_context=rubocop_context,
     )
 
-    return ask(prompt)
+    return ask_structured(
+        prompt,
+        ReviewResult,
+    )
