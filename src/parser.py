@@ -1,35 +1,22 @@
 import re
 
-def extract_ruby_files(diff: str) -> list[str]:
+
+def is_test_file(filename: str) -> bool:
     """
-    Return Ruby files modified by the Pull Request.
+    Determine whether a Ruby file is probably a test.
     """
 
-    pattern = r"diff --git a/(.*?) b/"
+    return (
+        filename.startswith("spec/")
+        or filename.startswith("test/")
+        or filename.endswith("_spec.rb")
+        or filename.endswith("_test.rb")
+    )
 
-    matches = re.findall(pattern, diff)
-
-    return [
-        filename
-        for filename in matches
-        if filename.endswith(".rb")
-    ]
 
 def extract_changed_files(diff: str) -> list[dict]:
     """
-    Parse the diff into individual changed files.
-
-    Returns something like:
-
-    [
-        {
-            "filename": "app/models/user.rb",
-            "is_ruby": True,
-            "is_test": False,
-            "added_lines": [...],
-            "removed_lines": [...]
-        }
-    ]
+    Split a Git diff into individual files.
     """
 
     sections = re.split(
@@ -54,83 +41,151 @@ def extract_changed_files(diff: str) -> list[dict]:
 
         filename = match.group(2)
 
-        added_lines = []
-        removed_lines = []
-
-        for line in section.splitlines():
-
-            if line.startswith("+++"):
-                continue
-
-            if line.startswith("---"):
-                continue
-
-            if line.startswith("+"):
-                added_lines.append(line[1:])
-
-            elif line.startswith("-"):
-                removed_lines.append(line[1:])
-
         files.append(
             {
                 "filename": filename,
                 "is_ruby": filename.endswith(".rb"),
                 "is_test": is_test_file(filename),
-                "added_lines": added_lines,
-                "removed_lines": removed_lines,
+                "hunks": extract_hunks(section),
             }
         )
 
     return files
 
-def is_test_file(filename: str) -> bool:
+
+def extract_hunks(file_diff: str) -> list[dict]:
     """
-    Determine whether a Ruby file is probably a test.
+    Extract Git diff hunks.
+
+    Example:
+
+    @@ -20,6 +20,8 @@
+
     """
 
-    return (
-        filename.startswith("spec/")
-        or filename.startswith("test/")
-        or filename.endswith("_spec.rb")
-        or filename.endswith("_test.rb")
+    sections = re.split(
+        r"(?=^@@ )",
+        file_diff,
+        flags=re.MULTILINE,
     )
+
+    hunks = []
+
+    for section in sections:
+
+        if not section.startswith("@@"):
+            continue
+
+        lines = section.splitlines()
+
+        header = lines[0]
+
+        changed_lines = []
+
+        added_lines = []
+
+        removed_lines = []
+
+        context_lines = []
+
+        for line in lines[1:]:
+
+            if line.startswith("+"):
+
+                if not line.startswith("+++"):
+                    added_lines.append(
+                        line[1:]
+                    )
+
+            elif line.startswith("-"):
+
+                if not line.startswith("---"):
+                    removed_lines.append(
+                        line[1:]
+                    )
+
+            else:
+
+                context_lines.append(
+                    line
+                )
+
+            if (
+                not line.startswith("+++")
+                and not line.startswith("---")
+            ):
+                changed_lines.append(line)
+
+        hunks.append(
+            {
+                "header": header,
+                "added_lines": added_lines,
+                "removed_lines": removed_lines,
+                "context_lines": context_lines,
+                "changed_lines": changed_lines,
+            }
+        )
+
+    return hunks
+
+
+def extract_ruby_files(diff: str) -> list[str]:
+    """
+    Return Ruby files modified by the PR.
+    """
+
+    files = extract_changed_files(diff)
+
+    return [
+        file["filename"]
+        for file in files
+        if file["is_ruby"]
+    ]
 
 
 def extract_added_ruby_code(diff: str) -> str:
     """
-    Extract added code from Ruby files only.
+    Return formatted changed Ruby code.
     """
 
-    changed_files = extract_changed_files(diff)
+    files = extract_changed_files(diff)
 
-    ruby_sections = []
+    sections = []
 
-    for file in changed_files:
+    for file in files:
 
         if not file["is_ruby"]:
             continue
 
-        if not file["added_lines"]:
-            continue
+        for hunk in file["hunks"]:
 
-        code = "\n".join(
-            file["added_lines"]
-        )
+            if not hunk["added_lines"]:
+                continue
 
-        ruby_sections.append(
-            f"""
+            sections.append(
+                f"""
 FILE: {file["filename"]}
 
-{code}
-"""
-        )
+HUNK:
+{hunk["header"]}
 
-    return "\n".join(ruby_sections)
+ADDED CODE:
+{chr(10).join(hunk["added_lines"])}
+
+REMOVED CODE:
+{chr(10).join(hunk["removed_lines"])}
+
+CONTEXT:
+{chr(10).join(hunk["context_lines"])}
+"""
+            )
+
+    return "\n".join(sections)
 
 
 def parse_diff(diff: str) -> dict:
     """
-    Parse a Pull Request diff into useful information.
+    Parse the complete Pull Request diff.
     """
 
     changed_files = extract_changed_files(diff)

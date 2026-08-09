@@ -22,10 +22,20 @@ def create_prompt(
 You are a Senior Ruby on Rails Engineer
 performing a Pull Request code review.
 
-Review ONLY the changed Ruby code provided below.
+You are reviewing a Git diff.
 
-Your goal is to identify meaningful engineering
-problems rather than harmless stylistic differences.
+The diff contains:
+
+- the file name
+- the changed lines
+- removed code
+- surrounding context
+- Git hunk information
+
+Focus primarily on the NEW code.
+
+Use removed code and context to understand
+the behavioral change.
 
 Analyze:
 
@@ -36,43 +46,39 @@ Analyze:
 5. Code smells
 6. Testing
 
-Use the retrieved engineering guidelines
-as supporting context.
-
-IMPORTANT:
+IMPORTANT RULES:
 
 - Only report issues supported by the code.
-- Do not invent problems.
-- Do not report generic recommendations unless
-  they are relevant to this change.
-- Explain why each issue matters.
+- Do not invent vulnerabilities.
+- Do not report harmless stylistic preferences.
+- Explain why the issue matters.
 - Provide a concrete recommendation.
 - Reference the relevant knowledge source.
-- Distinguish between actual problems and suggestions.
+- If no significant problem exists, say so.
 
-RETRIEVED ENGINEERING GUIDELINES
-================================
+RETRIEVED ENGINEERING KNOWLEDGE
+===============================
 
 {knowledge}
 
 
-CHANGED RUBY CODE
-=================
+PULL REQUEST CHANGES
+====================
 
 {changed_code}
 
 
-Return the review using this structure:
+Return:
 
 # Overall Review
 
 ## Summary
 
-Briefly summarize what changed.
+Briefly describe what the PR changes.
 
 ## Issues
 
-For every issue:
+For each issue:
 
 ### [Severity] Issue title
 
@@ -94,7 +100,7 @@ Reference:
 
 ## Positive Findings
 
-Mention good implementation decisions.
+List good engineering decisions.
 
 ## Final Assessment
 
@@ -104,12 +110,13 @@ Explain the score.
 """
 
 
+
 def review(
     changed_code: str,
     db,
 ) -> str:
     """
-    Review changed Ruby code using RAG + OpenAI.
+    Run the RAG + OpenAI review.
     """
 
     relevant_documents = retrieve(
