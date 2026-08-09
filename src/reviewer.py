@@ -1,26 +1,30 @@
 from src.open_ai_client import ask
 from src.rag import retrieve
 
-def create_prompt(diff: str, rules: list[dict]) -> str:
+def create_prompt(diff: str, relevant_documents) -> str:
     """
-    Build the prompt used by the AI reviewer.
+    Build the prompt using the Pull Request
+    and retrieved RAG context.
     """
 
-    formatted_rules = "\n\n".join(
-        f"[{rule['category']}]\n{rule['rule']}"
-        for rule in rules
+    knowledge = "\n\n".join(
+        (
+            f"Source: {document.metadata.get('source')}\n"
+            f"{document.page_content}"
+        )
+        for document in relevant_documents
     )
 
     return f"""
-You are a Senior Ruby on Rails Engineer performing
-a Pull Request code review.
+You are a Senior Ruby on Rails Engineer
+performing a Pull Request review.
 
 Review the following Pull Request.
 
-Your job is to identify meaningful engineering problems,
-not to complain about harmless stylistic differences.
+Your goal is to identify meaningful engineering
+problems, not harmless stylistic differences.
 
-Review for:
+Analyze:
 
 1. Security
 2. Performance
@@ -29,19 +33,22 @@ Review for:
 5. Code smells
 6. Testing
 
-Use the provided engineering guidelines as context.
+Use the retrieved engineering guidelines
+as supporting context.
 
 IMPORTANT:
-- Only report issues that are reasonably supported by the code.
+
+- Only report issues reasonably supported by the code.
 - Do not invent problems.
 - Explain why each issue matters.
 - Give a concrete recommendation.
-- If the code looks good, say so.
+- Mention the knowledge source when relevant.
+- If no issue exists in a category, do not invent one.
 
-ENGINEERING GUIDELINES
-======================
+RETRIEVED ENGINEERING GUIDELINES
+================================
 
-{formatted_rules}
+{knowledge}
 
 
 PULL REQUEST DIFF
@@ -56,16 +63,17 @@ Return the review using this structure:
 
 ## Summary
 
-Brief summary of the Pull Request.
+Brief summary.
 
 ## Issues
 
-For every issue provide:
+For each issue:
 
 ### [Severity] Issue title
 
 Category:
-Security / Performance / Rails / Maintainability / Testing
+Security / Performance / Rails /
+Maintainability / Testing
 
 Explanation:
 ...
@@ -73,27 +81,36 @@ Explanation:
 Recommendation:
 ...
 
+Reference:
+...
+
 ## Positive Findings
 
-Mention things that were implemented well.
+Mention things implemented well.
 
 ## Final Assessment
 
-Give an overall score from 0 to 100 and explain the score.
+Give an overall score from 0 to 100.
+Explain the score.
 """
 
 
-def review(diff: str, db) -> str:
+def review(
+    diff: str,
+    db,
+) -> str:
     """
-    Review a Pull Request using the knowledge base
-    and OpenAI.
+    Review a Pull Request using RAG + OpenAI.
     """
 
-    rules = retrieve(db, diff)
+    relevant_documents = retrieve(
+        db,
+        diff,
+    )
 
     prompt = create_prompt(
         diff=diff,
-        rules=rules,
+        relevant_documents=relevant_documents,
     )
 
     return ask(prompt)

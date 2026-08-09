@@ -1,19 +1,11 @@
 openai
+requests
+python-dotenv
 
 langchain
-
 langchain-community
-
 langchain-huggingface
+langchain-text-splitters
 
 faiss-cpu
-
 sentence-transformers
-
-gradio
-
-requests
-
-GitPython
-
-pydantic

@@ -1,35 +1,47 @@
-# Passwords
+# Ruby on Rails Security Guidelines
 
-Never compare plaintext passwords.
+## Password Authentication
 
-Bad
+Never compare a plaintext password directly with a stored password.
+
+Bad:
 
 user.password == params[:password]
 
-Good
+Prefer Rails authentication mechanisms such as has_secure_password
+and authenticate.
 
-user.authenticate(params[:password])
+## SQL Injection
 
-----------------------------------
+Never interpolate user-controlled values directly into SQL strings.
 
-# SQL Injection
+Bad:
 
-Avoid
+User.where("email = '#{params[:email]}'")
 
-User.where("email='#{params[:email]}'")
+Prefer parameterized Active Record queries.
 
-Use
+Good:
 
 User.where(email: params[:email])
 
-----------------------------------
+## Strong Parameters
 
-# Strong Parameters
+Never use permit! when handling user input unless there is a very
+specific and justified reason.
 
-Never
+Prefer explicitly permitting only the parameters the application needs.
 
-permit!
+Good:
 
-Prefer
+params.require(:user).permit(:name, :email)
 
-permit(:name,:email)
+## Authorization
+
+Authentication and authorization are different concerns.
+
+A user being authenticated does not mean they are authorized to
+perform every action.
+
+Always verify that the current user has permission to access or
+modify the requested resource.

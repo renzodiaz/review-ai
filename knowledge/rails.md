@@ -1,35 +1,49 @@
-# Passwords
+# Ruby on Rails Best Practices
 
-Never compare plaintext passwords.
+## Controllers
 
-Bad
+Controllers should remain thin.
 
-user.password == params[:password]
+Avoid putting complex business logic directly inside controller
+actions.
 
-Good
+When business logic becomes complex, consider extracting it into an
+appropriate service or domain object.
 
-user.authenticate(params[:password])
+## Active Record
 
-----------------------------------
+Use Active Record methods that respect validations when updating
+records.
 
-# SQL Injection
+Avoid update_attribute when validations should run.
 
-Avoid
+Prefer:
 
-User.where("email='#{params[:email]}'")
+user.update(name: "John")
 
-Use
+## Callbacks
 
-User.where(email: params[:email])
+Avoid putting complex business workflows inside Active Record
+callbacks.
 
-----------------------------------
+Callbacks can make application behavior difficult to understand and
+test.
 
-# Strong Parameters
+Consider an explicit service or use case for complex workflows.
 
-Never
+## Transactions
 
-permit!
+Operations that must succeed or fail together should be performed
+inside a database transaction.
 
-Prefer
+## Finders
 
-permit(:name,:email)
+Prefer expressive Active Record methods such as:
+
+find_by
+find_by!
+exists?
+where
+
+over unnecessarily complex custom SQL when Active Record can express
+the query safely and clearly.

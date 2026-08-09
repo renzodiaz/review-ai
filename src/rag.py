@@ -1,72 +1,107 @@
-KNOWLEDGE_BASE = [
-    {
-        "category": "Security",
-        "rule": "Never compare passwords directly. "
-                "Use secure password authentication such as "
-                "has_secure_password and authenticate."
-    },
-    {
-        "category": "Security",
-        "rule": "Never use permit! for controller parameters. "
-                "Explicitly permit only the parameters required."
-    },
-    {
-        "category": "Security",
-        "rule": "Avoid constructing SQL queries using string interpolation. "
-                "Use Active Record parameterized queries."
-    },
-    {
-        "category": "Performance",
-        "rule": "Avoid N+1 queries. "
-                "Use includes, preload, or eager_load when associations "
-                "are accessed inside loops."
-    },
-    {
-        "category": "Performance",
-        "rule": "For processing large Active Record datasets, "
-                "prefer find_each or find_in_batches instead of loading "
-                "all records into memory."
-    },
-    {
-        "category": "Rails",
-        "rule": "Avoid update_attribute because it skips validations. "
-                "Prefer update or update! when appropriate."
-    },
-    {
-        "category": "Rails",
-        "rule": "Keep controllers thin. "
-                "Business logic that is complex or reusable should be "
-                "moved into an appropriate domain or service object."
-    },
-    {
-        "category": "Testing",
-        "rule": "Changes to business-critical behavior should have "
-                "appropriate automated tests."
-    },
-]
+from pathlib import Path
 
-def load_vector_db():
+from langchain_core.documents import Document
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+from src.config import (
+    EMBEDDING_MODEL,
+    TOP_K,
+    CHUNK_SIZE,
+    CHUNK_OVERLAP,
+)
+
+KNOWLEDGE_DIR = Path(__file__).resolve().parent.parent / "knowledge"
+
+def load_documents() -> list[Document]:
     """
-    Temporary knowledge-base implementation.
-
-    In Milestone 2 this will be replaced by:
-        Markdown files
-        +
-        Hugging Face embeddings
-        +
-        FAISS
+    Load all Markdown files from the knowledge directory.
     """
 
-    return KNOWLEDGE_BASE
+    documents = []
 
-def retrieve(db, query: str) -> list[dict]:
+    for file_path in KNOWLEDGE_DIR.glob("*.md"):
+
+        text = file_path.read_text(
+            encoding="utf-8"
+        )
+
+        documents.append(
+            Document(
+                page_content=text,
+                metadata={
+                    "source": file_path.name
+                },
+            )
+        )
+
+    return documents
+
+
+def split_documents(
+    documents: list[Document],
+) -> list[Document]:
     """
-    Temporary retrieval implementation.
-
-    For now we return all rules.
-
-    Later this function will perform semantic similarity search
-    using FAISS.
+    Split knowledge documents into smaller chunks.
     """
 
-    return db
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=CHUNK_OVERLAP,
+    )
+
+    return splitter.split_documents(documents)
+
+def create_embeddings():
+    """
+    Create the Hugging Face embedding model.
+    """
+
+    return HuggingFaceEmbeddings(
+        model_name=EMBEDDING_MODEL
+    )
+
+def build_vector_db() -> FAISS:
+    """
+    Build a FAISS vector database from the knowledge base.
+    """
+
+    documents = load_documents()
+
+    if not documents:
+        raise RuntimeError(
+            "No knowledge documents found."
+        )
+
+    chunks = split_documents(documents)
+
+    embeddings = create_embeddings()
+
+    vector_db = FAISS.from_documents(
+        documents=chunks,
+        embedding=embeddings,
+    )
+
+    return vector_db
+
+def retrieve(
+    vector_db: FAISS,
+    query: str,
+) -> list[Document]:
+    """
+    Retrieve the most relevant knowledge chunks.
+    """
+
+    return vector_db.similarity_search(
+        query,
+        k=TOP_K,
+    )
+
+
+def load_vector_db() -> FAISS:
+    """
+    Convenience function used by the notebook.
+    """
+
+    return build_vector_db()
