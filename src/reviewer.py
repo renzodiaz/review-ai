@@ -1,10 +1,13 @@
 from src.open_ai_client import ask
 from src.rag import retrieve
 
-def create_prompt(diff: str, relevant_documents) -> str:
+
+def create_prompt(
+    changed_code: str,
+    relevant_documents,
+) -> str:
     """
-    Build the prompt using the Pull Request
-    and retrieved RAG context.
+    Build the AI review prompt.
     """
 
     knowledge = "\n\n".join(
@@ -17,12 +20,12 @@ def create_prompt(diff: str, relevant_documents) -> str:
 
     return f"""
 You are a Senior Ruby on Rails Engineer
-performing a Pull Request review.
+performing a Pull Request code review.
 
-Review the following Pull Request.
+Review ONLY the changed Ruby code provided below.
 
 Your goal is to identify meaningful engineering
-problems, not harmless stylistic differences.
+problems rather than harmless stylistic differences.
 
 Analyze:
 
@@ -38,12 +41,14 @@ as supporting context.
 
 IMPORTANT:
 
-- Only report issues reasonably supported by the code.
+- Only report issues supported by the code.
 - Do not invent problems.
+- Do not report generic recommendations unless
+  they are relevant to this change.
 - Explain why each issue matters.
-- Give a concrete recommendation.
-- Mention the knowledge source when relevant.
-- If no issue exists in a category, do not invent one.
+- Provide a concrete recommendation.
+- Reference the relevant knowledge source.
+- Distinguish between actual problems and suggestions.
 
 RETRIEVED ENGINEERING GUIDELINES
 ================================
@@ -51,10 +56,10 @@ RETRIEVED ENGINEERING GUIDELINES
 {knowledge}
 
 
-PULL REQUEST DIFF
+CHANGED RUBY CODE
 =================
 
-{diff}
+{changed_code}
 
 
 Return the review using this structure:
@@ -63,17 +68,20 @@ Return the review using this structure:
 
 ## Summary
 
-Brief summary.
+Briefly summarize what changed.
 
 ## Issues
 
-For each issue:
+For every issue:
 
 ### [Severity] Issue title
 
 Category:
 Security / Performance / Rails /
 Maintainability / Testing
+
+File:
+...
 
 Explanation:
 ...
@@ -86,30 +94,31 @@ Reference:
 
 ## Positive Findings
 
-Mention things implemented well.
+Mention good implementation decisions.
 
 ## Final Assessment
 
-Give an overall score from 0 to 100.
+Overall score: X/100
+
 Explain the score.
 """
 
 
 def review(
-    diff: str,
+    changed_code: str,
     db,
 ) -> str:
     """
-    Review a Pull Request using RAG + OpenAI.
+    Review changed Ruby code using RAG + OpenAI.
     """
 
     relevant_documents = retrieve(
         db,
-        diff,
+        changed_code,
     )
 
     prompt = create_prompt(
-        diff=diff,
+        changed_code=changed_code,
         relevant_documents=relevant_documents,
     )
 
