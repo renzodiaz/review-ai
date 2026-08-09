@@ -5,9 +5,10 @@ from src.rag import retrieve
 def create_prompt(
     changed_code: str,
     relevant_documents,
+    rubocop_context: str,
 ) -> str:
     """
-    Build the AI review prompt.
+    Build the final AI review prompt.
     """
 
     knowledge = "\n\n".join(
@@ -22,59 +23,69 @@ def create_prompt(
 You are a Senior Ruby on Rails Engineer
 performing a Pull Request code review.
 
-You are reviewing a Git diff.
+You have three sources of information:
 
-The diff contains:
+1. Changed Ruby code
+2. Retrieved engineering guidelines
+3. Static analysis results from RuboCop
 
-- the file name
-- the changed lines
-- removed code
-- surrounding context
-- Git hunk information
+Use all three as evidence.
 
-Focus primarily on the NEW code.
+Do not blindly trust static analysis.
+Determine whether each finding is actually
+important to the Pull Request.
 
-Use removed code and context to understand
-the behavioral change.
+Focus on meaningful engineering problems.
 
 Analyze:
 
-1. Security
-2. Performance
-3. Ruby on Rails best practices
-4. Maintainability
-5. Code smells
-6. Testing
+- Security
+- Performance
+- Rails best practices
+- Maintainability
+- Code smells
+- Testing
 
-IMPORTANT RULES:
+IMPORTANT:
 
-- Only report issues supported by the code.
+- Only report issues supported by evidence.
 - Do not invent vulnerabilities.
-- Do not report harmless stylistic preferences.
-- Explain why the issue matters.
-- Provide a concrete recommendation.
-- Reference the relevant knowledge source.
-- If no significant problem exists, say so.
+- Do not report harmless stylistic differences
+  as serious problems.
+- Explain why each issue matters.
+- Provide concrete recommendations.
+- Reference the source of the finding.
 
-RETRIEVED ENGINEERING KNOWLEDGE
-===============================
+========================
+RETRIEVED KNOWLEDGE
+========================
 
 {knowledge}
 
 
-PULL REQUEST CHANGES
-====================
+========================
+CHANGED RUBY CODE
+========================
 
 {changed_code}
 
 
-Return:
+========================
+RUBOCOP RESULTS
+========================
+
+{rubocop_context}
+
+
+========================
+OUTPUT
+========================
 
 # Overall Review
 
 ## Summary
 
-Briefly describe what the PR changes.
+Briefly describe what the Pull Request changes.
 
 ## Issues
 
@@ -84,9 +95,12 @@ For each issue:
 
 Category:
 Security / Performance / Rails /
-Maintainability / Testing
+Maintainability / Testing / Style
 
 File:
+...
+
+Line:
 ...
 
 Explanation:
@@ -95,12 +109,15 @@ Explanation:
 Recommendation:
 ...
 
+Evidence:
+RAG / RuboCop / Code Analysis
+
 Reference:
 ...
 
 ## Positive Findings
 
-List good engineering decisions.
+Mention good engineering decisions.
 
 ## Final Assessment
 
@@ -110,13 +127,13 @@ Explain the score.
 """
 
 
-
 def review(
     changed_code: str,
     db,
+    rubocop_context: str = "No RuboCop results.",
 ) -> str:
     """
-    Run the RAG + OpenAI review.
+    Run RAG + RuboCop + OpenAI review.
     """
 
     relevant_documents = retrieve(
@@ -127,6 +144,7 @@ def review(
     prompt = create_prompt(
         changed_code=changed_code,
         relevant_documents=relevant_documents,
+        rubocop_context=rubocop_context,
     )
 
     return ask(prompt)
