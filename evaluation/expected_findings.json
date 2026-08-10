@@ -1,0 +1,64 @@
+[
+  {
+    "case_id": "001_n_plus_one",
+    "expected": [
+      {
+        "type": "n_plus_one",
+        "category": "performance",
+        "severity": "high"
+      }
+    ]
+  },
+  {
+    "case_id": "002_sql_injection",
+    "expected": [
+      {
+        "type": "sql_injection",
+        "category": "security",
+        "severity": "critical"
+      }
+    ]
+  },
+  {
+    "case_id": "003_authorization",
+    "expected": [
+      {
+        "type": "authorization",
+        "category": "security",
+        "severity": "high"
+      }
+    ]
+  },
+  {
+    "case_id": "004_missing_test",
+    "expected": [
+      {
+        "type": "missing_test",
+        "category": "testing",
+        "severity": "medium"
+      }
+    ]
+  },
+  {
+    "case_id": "005_validation_bypass",
+    "expected": [
+      {
+        "type": "validation_bypass",
+        "category": "rails",
+        "severity": "high"
+      }
+    ]
+  },
+  {
+    "case_id": "006_clean_code",
+    "expected": []
+  },
+  {
+    "case_id": "007_clean_query",
+    "expected": []
+  },
+  {
+    "case_id": "008_safe_sql",
+    "expected": []
+  }
+]

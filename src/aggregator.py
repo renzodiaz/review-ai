@@ -116,6 +116,7 @@ def rubocop_to_issues(
                     f"RuboCop: "
                     f"{offense['cop']}"
                 ),
+                type="rubocop",
                 severity=severity,
                 category="style",
                 file=offense["file"],

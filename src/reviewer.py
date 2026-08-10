@@ -73,6 +73,29 @@ RUBOCOP RESULTS
 
 {rubocop_context}
 
+Every issue must have a normalized type.
+
+Use one of these types when applicable:
+
+- n_plus_one
+- sql_injection
+- authorization
+- authentication
+- missing_test
+- validation_bypass
+- mass_assignment
+- insecure_file_access
+- race_condition
+- inefficient_query
+- error_handling
+- maintainability
+- code_duplication
+- style
+
+If none applies, use:
+
+other
+
 
 SCORING GUIDELINES
 ==================

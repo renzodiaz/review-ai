@@ -24,6 +24,8 @@ Category = Literal[
 class ReviewIssue(BaseModel):
     title: str
 
+    type: str
+
     severity: Severity
 
     category: Category
