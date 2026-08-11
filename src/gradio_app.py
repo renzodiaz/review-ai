@@ -1,3 +1,4 @@
+import time
 import gradio as gr
 
 from src.aggregator import merge_review, rubocop_to_issues
@@ -26,6 +27,8 @@ def review_pull_request(pr_url: str) -> str:
 
     if not pr_url or not pr_url.strip():
         return "❌ Please enter a GitHub Pull Request URL."
+
+    start_time = time.perf_counter()
 
     try:
         # ---------------------------------------------------------
@@ -114,11 +117,14 @@ def review_pull_request(pr_url: str) -> str:
         # 10. Format result for Gradio
         # ---------------------------------------------------------
 
+        elapsed_seconds = time.perf_counter() - start_time
+
         return format_review(
             result=final_result,
             pr_info=pr_info,
             parsed=parsed,
             offenses=offenses,
+            elapsed_seconds=elapsed_seconds,
         )
 
     except Exception as error:
@@ -133,6 +139,7 @@ def format_review(
     pr_info,
     parsed,
     offenses,
+    elapsed_seconds,
 ) -> str:
     """
     Convert ReviewResult into a human-readable Markdown report.
@@ -150,6 +157,10 @@ def format_review(
 
     output.append(
         f"**Pull Request:** `#{pr_info['number']}`"
+    )
+
+    output.append(
+        f"**AI review time:** `{elapsed_seconds:.2f} seconds`"
     )
 
     output.append("")
@@ -297,6 +308,19 @@ def format_review(
         )
 
     output.append("")
+
+    # -------------------------------------------------------------
+    # RAG sources context
+    # -------------------------------------------------------------
+
+    if result.rag_sources:
+        output.append("## 🧠 RAG Context")
+        output.append("")
+
+        for source in result.rag_sources:
+            output.append(f"- 📚 `{source}`")
+
+        output.append("")
 
     # -------------------------------------------------------------
     # Architecture evidence

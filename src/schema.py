@@ -58,3 +58,7 @@ class ReviewResult(BaseModel):
     positive_findings: list[str] = Field(
         default_factory=list
     )
+
+    rag_sources: list[str] = Field(
+        default_factory=list
+    )

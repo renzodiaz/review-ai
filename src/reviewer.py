@@ -139,7 +139,19 @@ def review(
         rubocop_context=rubocop_context,
     )
 
-    return ask_structured(
+    result = ask_structured(
         prompt,
         ReviewResult,
     )
+
+    rag_sources = []
+
+    for document in relevant_documents:
+        source = document.metadata.get("source")
+
+        if source and source not in rag_sources:
+            rag_sources.append(source)
+
+    result.rag_sources = rag_sources
+
+    return result
