@@ -60,5 +60,25 @@
   {
     "case_id": "008_safe_sql",
     "expected": []
+  },
+  {
+    "case_id": "009_mass_assignment",
+    "expected": [
+      {
+        "type": "mass_assignment",
+        "category": "security",
+        "severity": "high"
+      }
+    ]
+  },
+  {
+    "case_id": "010_race_condition",
+    "expected": [
+      {
+        "type": "race_condition",
+        "category": "rails",
+        "severity": "medium"
+      }
+    ]
   }
 ]

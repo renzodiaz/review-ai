@@ -1,0 +1,245 @@
+<title>Reporte de Evaluación — Ruby PR Reviewer</title>
+<style>
+  :root{
+    --paper:#eef1ec; --paper-raised:#ffffff; --ink:#14171a; --ink-soft:#52585c; --ink-faint:#868d8a;
+    --line:rgba(20,23,26,0.13); --ruby:#c81e3a; --ruby-soft:#f6dde1;
+    --amber:#8a5a06; --amber-soft:#f3e6cf; --green:#2f6f4e; --green-soft:#dcece3;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#14171a; --paper-raised:#1c2024; --ink:#eef1ec; --ink-soft:#a3aab0; --ink-faint:#6b7278;
+      --line:rgba(238,241,236,0.14); --ruby:#ff7086; --ruby-soft:rgba(255,112,134,0.14);
+      --amber:#e0a53d; --amber-soft:rgba(224,165,61,0.14); --green:#6fcf9e; --green-soft:rgba(111,207,158,0.14);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#14171a; --paper-raised:#1c2024; --ink:#eef1ec; --ink-soft:#a3aab0; --ink-faint:#6b7278;
+    --line:rgba(238,241,236,0.14); --ruby:#ff7086; --ruby-soft:rgba(255,112,134,0.14);
+    --amber:#e0a53d; --amber-soft:rgba(224,165,61,0.14); --green:#6fcf9e; --green-soft:rgba(111,207,158,0.14);
+  }
+  :root[data-theme="light"]{
+    --paper:#eef1ec; --paper-raised:#ffffff; --ink:#14171a; --ink-soft:#52585c; --ink-faint:#868d8a;
+    --line:rgba(20,23,26,0.13); --ruby:#c81e3a; --ruby-soft:#f6dde1;
+    --amber:#8a5a06; --amber-soft:#f3e6cf; --green:#2f6f4e; --green-soft:#dcece3;
+  }
+  *{box-sizing:border-box;}
+  body{ background:var(--paper); color:var(--ink); font-family:var(--serif); line-height:1.55; -webkit-font-smoothing:antialiased; }
+  ::selection{ background:var(--ruby-soft); }
+  .page{ max-width:820px; margin:0 auto; padding:56px 24px 96px; }
+
+  .masthead{ display:flex; justify-content:space-between; align-items:flex-end; gap:24px; border-bottom:2px solid var(--ink); padding-bottom:18px; margin-bottom:8px; flex-wrap:wrap; }
+  .eyebrow{ font-family:var(--mono); font-size:11.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ruby); margin:0 0 10px; }
+  h1{ font-family:var(--serif); font-size:30px; font-weight:700; margin:0; text-wrap:balance; letter-spacing:-0.01em; }
+  .meta{ font-family:var(--mono); font-size:11.5px; color:var(--ink-soft); text-align:right; line-height:1.7; white-space:nowrap; }
+
+  p{ margin:0 0 14px; }
+  .lede{ font-size:16px; margin:16px 0 40px; }
+  .muted{ color:var(--ink-soft); }
+
+  section{ margin-bottom:44px; }
+  .sec-head{ display:flex; align-items:baseline; gap:12px; margin-bottom:14px; }
+  .sec-num{ font-family:var(--mono); font-size:12px; color:var(--ruby); border:1px solid var(--ruby); border-radius:3px; padding:1px 6px; flex:none; }
+  h2{ font-family:var(--serif); font-size:20px; font-weight:700; margin:0; text-wrap:balance; }
+
+  code{ font-family:var(--mono); background:var(--paper-raised); border:1px solid var(--line); border-radius:4px; padding:1px 6px; font-size:12.5px; }
+
+  .callout{ background:var(--paper-raised); border:1px solid var(--line); border-left:3px solid var(--ruby); border-radius:6px; padding:14px 18px; font-size:14.5px; margin:16px 0; }
+  .callout b.label{ font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ruby); display:block; margin-bottom:6px; }
+
+  /* metric tiles */
+  .tiles{ display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin:16px 0 8px; }
+  @media (max-width:760px){ .tiles{ grid-template-columns:repeat(3,1fr); } }
+  @media (max-width:460px){ .tiles{ grid-template-columns:repeat(2,1fr); } }
+  .tile{ background:var(--paper-raised); border:1px dashed var(--ink-faint); border-radius:8px; padding:14px 10px; text-align:center; }
+  .tile .v{ font-family:var(--mono); font-size:22px; font-weight:600; color:var(--ink-faint); font-variant-numeric:tabular-nums; }
+  .tile .l{ font-family:var(--mono); font-size:9.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-faint); margin-top:6px; }
+  .tiles-note{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); margin:6px 0 0; }
+
+  table{ width:100%; border-collapse:collapse; font-size:13px; margin:12px 0; }
+  th{ font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-faint); text-align:left; padding:6px 8px; border-bottom:1px solid var(--ink); white-space:nowrap; }
+  td{ padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  td.mono{ font-family:var(--mono); font-size:12px; }
+  .tbl-wrap{ overflow-x:auto; }
+
+  .chip{ font-family:var(--mono); font-size:10px; padding:2px 7px; border-radius:20px; display:inline-block; white-space:nowrap; }
+  .chip.sec{ background:var(--ruby-soft); color:var(--ruby); }
+  .chip.perf{ background:var(--amber-soft); color:var(--amber); }
+  .chip.clean{ background:var(--green-soft); color:var(--green); }
+  .chip.pass{ background:var(--green-soft); color:var(--green); }
+  .chip.pending{ border:1px dashed var(--ink-faint); color:var(--ink-faint); }
+
+  .before-after{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:18px; margin:20px 0; }
+  @media (max-width:560px){ .before-after{ grid-template-columns:1fr; } }
+  .ba-card{ background:var(--paper-raised); border:1px solid var(--line); border-radius:10px; padding:20px; text-align:center; }
+  .ba-card .k{ font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-faint); margin-bottom:8px; }
+  .ba-card .n{ font-family:var(--mono); font-size:30px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .ba-card.before .n{ color:var(--ink); }
+  .ba-card.after .n{ color:var(--ruby); }
+  .ba-card .u{ font-size:13px; color:var(--ink-soft); margin-top:4px; }
+  .ba-arrow{ font-family:var(--mono); font-size:22px; color:var(--ruby); text-align:center; }
+
+  ol.steps{ margin:0; padding-left:0; list-style:none; counter-reset:step; }
+  ol.steps li{ counter-increment:step; position:relative; padding:8px 0 8px 30px; font-size:14px; border-bottom:1px solid var(--line); }
+  ol.steps li:before{ content:counter(step); position:absolute; left:0; top:8px; font-family:var(--mono); font-size:11px; color:var(--ruby); border:1px solid var(--ruby); border-radius:3px; width:16px; height:16px; display:flex; align-items:center; justify-content:center; }
+  ol.steps li:last-child{ border-bottom:none; }
+
+  footer{ margin-top:56px; padding-top:16px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11px; color:var(--ink-faint); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+</style>
+
+<div class="page">
+
+  <div class="masthead">
+    <div>
+      <p class="eyebrow">Reporte de Evaluación</p>
+      <h1>Ruby PR Reviewer — Benchmark</h1>
+    </div>
+    <div class="meta">
+      Grupo 5<br>
+      11 ago 2026 · Sesión 8
+    </div>
+  </div>
+
+  <p class="lede">
+    Este reporte mide dos cosas distintas: si el agente funciona (test set de 10 casos, precisión/recall/
+    confiabilidad) y si aporta valor (el indicador de la propuesta, antes → después). El test set dice
+    que funciona; el indicador dice cuánto vale.
+  </p>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2>Metodología</h2></div>
+    <p>
+      <code>evaluation/cases/</code> contiene 10 snippets de Ruby: 7 con un problema de ingeniería
+      inyectado deliberadamente (uno por tipo) y 3 "limpios" que no deberían disparar ningún hallazgo —
+      sirven para medir falsos positivos. Cada caso se corre contra el pipeline real
+      (<code>src/reviewer.review</code>) y se compara el conjunto de tipos detectados contra
+      <code>evaluation/expected_findings.json</code>.
+    </p>
+    <p class="muted">
+      Un caso con hallazgo esperado <b>aprueba</b> si el agente detecta ese tipo. Un caso limpio
+      <b>aprueba</b> si el agente no reporta nada. <code>src/evaluator.py::compute_metrics</code>
+      agrega esto en precisión, recall, F1, success rate, confiabilidad (corridas sin excepción) y
+      latencia promedio.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><h2>Test set — 10 casos</h2></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Caso</th><th>Tipo esperado</th><th>Categoría</th><th>Severidad</th><th>Detectado</th><th>Resultado</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="mono">001_n_plus_one</td><td class="mono">n_plus_one</td><td><span class="chip perf">performance</span></td><td>high</td><td class="mono">n_plus_one</td><td><span class="chip pass">aprueba</span></td></tr>
+          <tr><td class="mono">002_sql_injection</td><td class="mono">sql_injection</td><td><span class="chip sec">security</span></td><td>critical</td><td class="mono">sql_injection</td><td><span class="chip pass">aprueba</span></td></tr>
+          <tr><td class="mono">003_authorization</td><td class="mono">authorization</td><td><span class="chip sec">security</span></td><td>high</td><td class="mono">authorization</td><td><span class="chip pass">aprueba</span></td></tr>
+          <tr><td class="mono">004_missing_test</td><td class="mono">missing_test</td><td><span class="chip perf">testing</span></td><td>medium</td><td class="mono">missing_test</td><td><span class="chip pass">aprueba</span></td></tr>
+          <tr><td class="mono">005_validation_bypass</td><td class="mono">validation_bypass</td><td><span class="chip perf">rails</span></td><td>high</td><td class="mono">validation_bypass</td><td><span class="chip pass">aprueba</span></td></tr>
+          <tr><td class="mono">006_clean_code</td><td class="mono muted">— (limpio)</td><td><span class="chip clean">n/a</span></td><td>—</td><td class="mono muted">— (ninguno)</td><td><span class="chip pass">aprueba</span></td></tr>
+          <tr><td class="mono">007_clean_query</td><td class="mono muted">— (limpio)</td><td><span class="chip clean">n/a</span></td><td>—</td><td class="mono muted">— (ninguno)</td><td><span class="chip pass">aprueba</span></td></tr>
+          <tr><td class="mono">008_safe_sql</td><td class="mono muted">— (limpio)</td><td><span class="chip clean">n/a</span></td><td>—</td><td class="mono muted">— (ninguno)</td><td><span class="chip pass">aprueba</span></td></tr>
+          <tr><td class="mono">009_mass_assignment</td><td class="mono">mass_assignment</td><td><span class="chip sec">security</span></td><td>high</td><td class="mono muted">—</td><td><span class="chip pending">pendiente</span></td></tr>
+          <tr><td class="mono">010_race_condition</td><td class="mono">race_condition</td><td><span class="chip perf">rails</span></td><td>medium</td><td class="mono muted">—</td><td><span class="chip pending">pendiente</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="tiles-note">8/10 casos corridos contra el pipeline real (001–008): expected == detected en los 8. 009 y 010 se agregaron al test set después de esta corrida — ver sección 06.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><h2>Métricas agregadas</h2></div>
+    <div class="tiles">
+      <div class="tile"><div class="v">1.00</div><div class="l">Precisión</div></div>
+      <div class="tile"><div class="v">1.00</div><div class="l">Recall</div></div>
+      <div class="tile"><div class="v">1.00</div><div class="l">F1</div></div>
+      <div class="tile"><div class="v">100%</div><div class="l">Success rate</div></div>
+      <div class="tile"><div class="v">100%</div><div class="l">Confiabilidad</div></div>
+      <div class="tile"><div class="v">—</div><div class="l">Latencia avg.</div></div>
+    </div>
+    <p class="tiles-note">Calculado sobre los 8/10 casos corridos (001–008): 5 TP, 0 FP, 0 FN, 0 corridas con excepción. Falta correr 009–010 y capturar la latencia promedio — ver sección 06.</p>
+
+    <div class="callout">
+      <b class="label">Costo</b>
+      El costo por revisión es proporcional a tokens de entrada (código + contexto RAG + contexto
+      RuboCop) y salida (JSON estructurado) sobre <code>gpt-5.4-mini</code>. Para reportarlo: sumar el
+      uso de tokens de las 10 corridas desde el dashboard de OpenAI (Usage) inmediatamente después de
+      ejecutar el benchmark, y dividir el costo total entre 10 para el costo promedio por PR.
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><h2>Caso real — PR en vivo</h2></div>
+    <p>
+      Corrida real sobre <code>github.com/renzodiaz/notes-api/pull/5</code> a través de la UI de
+      Gradio — no un caso sintético del test set.
+    </p>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>Repositorio</th><th>Pull Request</th><th>Review score</th><th>Archivos cambiados</th><th>Archivos Ruby</th><th>Offenses RuboCop</th><th>Review time</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="mono">renzodiaz/notes-api</td><td class="mono">#5</td><td class="mono">58/100</td><td class="mono">10</td><td class="mono">7</td><td class="mono">3</td><td class="mono">10.90s</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted">
+      6 hallazgos: 3 de estilo (RuboCop, severidad baja) y 1 de severidad <b>alta</b> — el endpoint
+      de login renderiza la respuesta de éxito y la ejecución sigue hacia el <code>render</code> de
+      "unauthorized", un double-render que rompe el endpoint para todos los requests. Además, severidad
+      media por exponer el objeto <code>User</code> completo en <code>render json: { user: user }</code>
+      y severidad media por no tener tests automatizados para el flujo de login. También reportó 3
+      hallazgos positivos: uso de <code>has_secure_password</code>,
+      <code>User.find_by(email: params[:email])</code> parametrizado en vez de interpolado, y la
+      columna <code>password_digest</code> correcta en el modelo.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">05</span><h2>Hipótesis de valor — antes → después</h2></div>
+    <p class="muted">
+      Indicador: tiempo humano invertido en revisar un PR de Ruby de tamaño moderado.
+    </p>
+    <div class="before-after">
+      <div class="ba-card before">
+        <div class="k">Antes — manual</div>
+        <div class="n">15–20</div>
+        <div class="u">minutos / PR (supuesto explícito, no medido)</div>
+      </div>
+      <div class="ba-arrow">→</div>
+      <div class="ba-card after">
+        <div class="k">Después — agente</div>
+        <div class="n">10.9</div>
+        <div class="u">segundos / PR — notes-api #5 (sección 04)</div>
+      </div>
+    </div>
+    <p class="muted">
+      El "antes" es un supuesto declarado explícitamente, tal como permite la consigna cuando no hay
+      un número medido disponible. El "después" es un número real, tomado del reloj del pipeline
+      (<code>elapsed_seconds</code> en <code>src/gradio_app.py</code>) durante la revisión en vivo del
+      PR #5 de <code>notes-api</code> — no es un promedio ni una proyección.
+    </p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">06</span><h2>Estado y pendientes</h2></div>
+    <p>
+      Casos <code>001</code>–<code>008</code> corridos contra el pipeline real
+      (<code>src/reviewer.review</code>): expected == detected en los 8, 0 falsos positivos y 0 falsos
+      negativos (secciones 02–03).
+    </p>
+    <ol class="steps">
+      <li>Correr <code>009_mass_assignment</code> y <code>010_race_condition</code> (agregados al test set después de esta corrida) y actualizar la tabla de la sección 02 y los tiles de la sección 03 con las 10 corridas.</li>
+      <li>Guardar <code>reports/evaluation_metrics.json</code> desde <code>notebook.ipynb</code> (<code>run_benchmark</code> + <code>compute_metrics</code>) para tener la latencia promedio real.</li>
+      <li>Anotar el uso de tokens desde el dashboard de OpenAI (Usage) para la nota de costo de la sección 03.</li>
+    </ol>
+  </section>
+
+  <footer>
+    <span>review-ai · github.com/renzodiaz/review-ai</span>
+    <span>Reporte de evaluación — 1/1</span>
+  </footer>
+
+</div>

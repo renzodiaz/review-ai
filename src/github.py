@@ -1,9 +1,22 @@
+import os
 import re
 import tempfile
 from pathlib import Path
 
 import requests
+from dotenv import load_dotenv
 from git import Repo
+
+load_dotenv()
+
+
+def _github_headers() -> dict:
+    token = os.environ.get("GITHUB_TOKEN")
+
+    if not token:
+        return {}
+
+    return {"Authorization": f"Bearer {token}"}
 
 
 def parse_pr_url(pr_url: str) -> dict:
@@ -54,6 +67,7 @@ def download_pr(pr_url: str) -> str:
 
     response = requests.get(
         diff_url,
+        headers=_github_headers(),
         timeout=30,
     )
 
@@ -69,6 +83,7 @@ def download_diff(diff_url: str) -> str:
 
     response = requests.get(
         diff_url,
+        headers=_github_headers(),
         timeout=30,
     )
 
@@ -93,6 +108,7 @@ def get_pr_metadata(pr_url: str) -> dict:
 
     response = requests.get(
         api_url,
+        headers=_github_headers(),
         timeout=30,
     )
 
