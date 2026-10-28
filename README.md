@@ -155,6 +155,38 @@ agent honest about both missed issues and noise.
 
 ---
 
+## Security & threat model
+
+A code-review agent consumes **untrusted input by design**: the diff and
+RuboCop output come from whoever opened the pull request. The agent treats them
+accordingly.
+
+- **Prompt injection.** The changed code and RuboCop results are fenced inside
+  the prompt and the model is instructed to treat them strictly as data, never
+  as instructions ([`src/reviewer.py`](src/reviewer.py)). The fence delimiters
+  are stripped from the untrusted content first, so an author cannot close the
+  fence and append their own instructions ([`src/sanitize.py`](src/sanitize.py)).
+- **Defense in depth on the output.** Independently of the model, the untrusted
+  code is scanned for injection phrases; if any are found, the review reports a
+  security issue and the score is capped so a manipulated "100 / no issues"
+  result cannot pass silently ([`validate_result`](src/reviewer.py)).
+
+Known hardening still worth doing (good next steps): sandbox the clone + RuboCop
+run (RuboCop can execute code via a repo's `.rubocop.yml require:`), gate the
+public Gradio share link behind an env flag, cap diff size, and clean up the
+temp clone directory.
+
+## Testing
+
+Deterministic unit tests cover the pure logic — diff parsing, finding
+de-duplication / severity mapping, the injection sanitizer, and the output
+guard:
+
+```bash
+pip install pytest
+pytest -q
+```
+
 ## Configuration
 
 Tunable in `src/config.py`:
