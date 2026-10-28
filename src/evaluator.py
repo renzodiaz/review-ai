@@ -33,8 +33,6 @@ def load_cases(
 
     root = Path(path)
 
-    print(root)
-
     for case_dir in sorted(
         root.iterdir()
     ):

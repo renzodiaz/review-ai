@@ -55,6 +55,11 @@ IMPORTANT RULES:
   speculative issues.
 - The score should reflect the severity and number
   of meaningful issues.
+- Each issue's evidence must quote the specific
+  changed lines that justify it, not paraphrase.
+- Keep each issue's category consistent with its
+  type (e.g. sql_injection -> security,
+  n_plus_one -> performance).
 
 RETRIEVED KNOWLEDGE
 ===================

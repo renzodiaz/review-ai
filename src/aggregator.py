@@ -92,6 +92,7 @@ def merge_review(
         positive_findings=(
             ai_result.positive_findings
         ),
+        rag_sources=ai_result.rag_sources,
     )
 
 def rubocop_to_issues(
